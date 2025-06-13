@@ -50,3 +50,12 @@ An intelligent, modular AI chatbot powered by **Groq’s LLaMA-3**, **LangChain 
 - **Environment Management**: dotenv (.env file)
 
 ---
+
+{
+  "model_name": "llama-3.3-70b-versatile",
+  "model_provider": "Groq",
+  "system_prompt": "Act as an AI tutor who helps students solve problems",
+  "messages": ["What is the difference between BERT and LLaMA?"],
+  "allow_search": true
+}
+
