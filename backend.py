@@ -1,11 +1,34 @@
-
 from dotenv import load_dotenv
 load_dotenv()
 
 #Step1: Setup Pydantic Model (Schema Validation)
 from pydantic import BaseModel
 from typing import List
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from ai_agent import get_response_from_ai_agent
 
+ALLOWED_MODEL_NAMES=["llama3-70b-8192", "mixtral-8x7b-32768", "llama-3.3-70b-versatile" ]
+
+app=FastAPI(title="LangGraph AI Agent")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/")
+async def read_root():
+    return FileResponse("index.html")
 
 class RequestState(BaseModel):
     model_name: str
@@ -13,17 +36,6 @@ class RequestState(BaseModel):
     system_prompt: str
     messages: List[str]
     allow_search: bool
-
-
-
-
-#Step2: Setup AI Agent from FrontEnd Request
-from fastapi import FastAPI
-from ai_agent import get_response_from_ai_agent
-
-ALLOWED_MODEL_NAMES=["llama3-70b-8192", "mixtral-8x7b-32768", "llama-3.3-70b-versatile" ]
-
-app=FastAPI(title="LangGraph AI Agent")
 
 @app.post("/chat")
 def chat_endpoint(request: RequestState): 
@@ -44,9 +56,7 @@ def chat_endpoint(request: RequestState):
     response = get_response_from_ai_agent(llm_id, query , allow_search , system_prompt , provider)
     return response
 
-
-
 # run app and explore swagger ui docs
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app , host='127.0.0.1',port=9999)
+    uvicorn.run(app, host='0.0.0.0', port=9999)

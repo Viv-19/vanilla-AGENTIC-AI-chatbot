@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot Powered by Agents</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: calc(100vh - 400px);
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">AI CHATBOT POWERED BY AGENTS</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Define your AI Agent:</label>
+                <textarea id="systemPrompt" class="w-full p-2 border rounded-lg" rows="3" placeholder="Type your prompt here..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Select Provider:</label>
+                <div class="flex space-x-4">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="provider" value="Groq" checked class="form-radio">
+                        <span class="ml-2">Groq</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="provider" value="OpenAI" class="form-radio">
+                        <span class="ml-2">OpenAI</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Select Model:</label>
+                <select id="modelSelect" class="w-full p-2 border rounded-lg">
+                    <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+                    <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="allowSearch" class="form-checkbox">
+                    <span class="ml-2">Allow Web Search</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="chat-container mb-4 p-4 border rounded-lg" id="chatContainer"></div>
+            
+            <div class="flex space-x-4">
+                <textarea id="userQuery" class="flex-1 p-2 border rounded-lg" rows="3" placeholder="Ask Anything!"></textarea>
+                <button onclick="sendMessage()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+                    Ask Agent!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/chat';  // This will be relative to the current domain
+
+        async function sendMessage() {
+            const userQuery = document.getElementById('userQuery').value.trim();
+            if (!userQuery) return;
+
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const provider = document.querySelector('input[name="provider"]:checked').value;
+            const selectedModel = document.getElementById('modelSelect').value;
+            const allowSearch = document.getElementById('allowSearch').checked;
+
+            // Add user message to chat
+            addMessageToChat('User', userQuery);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model_name: selectedModel,
+                        model_provider: provider,
+                        system_prompt: systemPrompt,
+                        messages: [userQuery],
+                        allow_search: allowSearch
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    addMessageToChat('Error', data.error);
+                } else {
+                    addMessageToChat('Agent', data);
+                }
+            } catch (error) {
+                addMessageToChat('Error', 'Failed to get response from the agent.');
+            }
+
+            // Clear input
+            document.getElementById('userQuery').value = '';
+        }
+
+        function addMessageToChat(sender, message) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'mb-4';
+            
+            const senderSpan = document.createElement('span');
+            senderSpan.className = 'font-bold text-blue-600';
+            senderSpan.textContent = sender + ': ';
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            
+            messageDiv.appendChild(senderSpan);
+            messageDiv.appendChild(messageSpan);
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Handle Enter key in textarea
+        document.getElementById('userQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 
